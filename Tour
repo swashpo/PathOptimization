@@ -1,0 +1,226 @@
+public class Tour {
+
+    private Node first; // starting node
+    private int counter; // number of nodes
+    private double distance = 0; // distance traveled by salesperson
+
+    private class Node {
+        private final Point p; // point
+        private Node next; // next node
+
+        // constructor
+        private Node(Point p) {
+            this.p = p;
+            this.next = null;
+        }
+    }
+
+    // creates an empty tour
+    public Tour() {
+        first = null;
+        counter = 0;
+    }
+
+    // creates the 4-point tour a->b->c->d->a (for debugging)
+    public Tour(Point a, Point b, Point c, Point d) {
+        first = new Node(a);
+        Node second = new Node(b);
+        Node third = new Node(c);
+        Node fourth = new Node(d);
+
+        first.next = second;
+        second.next = third;
+        third.next = fourth;
+        fourth.next = first;
+
+        // adds distances
+        distance = first.p.distanceTo(second.p);
+        distance += second.p.distanceTo(third.p);
+        distance += third.p.distanceTo(fourth.p);
+        distance += fourth.p.distanceTo(first.p);
+
+        counter = 4;
+    }
+
+    // returns the number of points in this tour
+    public int size() {
+        if (counter == 0) {
+            return 0;
+        }
+        return counter;
+    }
+
+
+    // returns the length of this tour
+    public double length() {
+        if (counter == 0) {
+            return 0;
+        }
+        return distance;
+    }
+
+
+    // returns a string representation of this tour
+    public String toString() {
+        if (counter == 0) {
+            return "";
+        }
+
+        StringBuilder string = new StringBuilder();
+        Node current = first;
+
+        // appends points as strings
+        do {
+            string.append(current.p.toString() + "\n");
+            current = current.next;
+        } while (current != first);
+
+        return string.toString();
+    }
+
+
+    // draws this tour to standard drawing
+    public void draw() {
+        if (counter == 0) {
+            return;
+        }
+
+        Node current = first;
+
+        // draws each point and connects points
+        do {
+            current.p.drawTo(current.next.p);
+            current = current.next;
+        } while (current != first);
+    }
+
+    // inserts p using the nearest neighbor heuristic
+    public void insertNearest(Point p) {
+
+        // for initial null Tour and first point
+        if (counter == 0) {
+            first = new Node(p);
+            first.next = first;
+            counter++;
+            return;
+        }
+
+        counter++; // ups count for number of points
+
+        Node current = first; // node we're comparing to
+        Node newNode = new Node(p); // new node created at point p
+
+        double pToP; // distance from point to point
+        double minDistance = Double.POSITIVE_INFINITY; // minimum distance
+        Node closest = first; // sets initial closest to first
+
+        do {
+            // finds distance from new node to current
+            pToP = current.p.distanceTo(newNode.p);
+
+            // sets minimum distance if it is less than before
+            if (pToP < minDistance) {
+                minDistance = pToP;
+                closest = current;
+            }
+            current = current.next;
+        } while (current != first);
+
+        // inserts node
+        newNode.next = closest.next;
+        closest.next = newNode;
+
+        // updates overall distance traveled of tour
+        distance += closest.p.distanceTo(newNode.p) +
+                newNode.p.distanceTo(newNode.next.p);
+        distance -= closest.p.distanceTo(closest.next.next.p);
+    }
+
+    // inserts p using the smallest increase heuristic
+    public void insertSmallest(Point p) {
+
+        // for initial empty tour case
+        if (counter == 0) {
+            first = new Node(p);
+            first.next = first;
+            counter++;
+            return;
+        }
+
+        counter++; // ups count for number of points
+
+        Node current = first; // node we're comparing to
+        Node newNode = new Node(p); // new node
+        Node smallest = first; // sets initial smallest distance to first node
+
+        double currentDistance; // declare distance of tour
+
+        double minDistance = Double.POSITIVE_INFINITY; // minimum distance
+
+        // iterates thru each node to find minimum distance
+        do {
+            double deleteDistance =
+                    current.p.distanceTo(current.next.p); // subtract this
+            double currentToP = current.p.distanceTo(newNode.p); // from current to p
+            double pToNext = newNode.p.distanceTo(current.next.p); // from current to p
+
+            // updates distance if node is inserted in given place
+            currentDistance = currentToP + pToNext - deleteDistance;
+
+            // sets node location for insertion if distance is less than before
+            if (currentDistance < minDistance) {
+                smallest = current;
+                minDistance = currentDistance;
+            }
+            if (counter == 2)
+                break;
+            current = current.next;
+
+        } while (current != first);
+
+        // inserts node
+        newNode.next = smallest.next;
+        smallest.next = newNode;
+        distance += minDistance;
+    }
+
+    // tests this class by directly calling all constructors and instance methods
+    public static void main(String[] args) {
+        StdDraw.setXscale(0, StdIn.readInt());
+        StdDraw.setYscale(0, StdIn.readInt());
+
+        Tour test1 = new Tour(); // for insert nearest
+        Tour test2 = new Tour(); // for smallest distance
+
+        // inserts each point
+        while (!StdIn.isEmpty()) {
+            Point x = new Point(StdIn.readDouble(), StdIn.readDouble());
+            test1.insertNearest(x);
+            test2.insertSmallest(x);
+        }
+
+        // tests toString
+        String string = test1.toString();
+        StdOut.println(string);
+
+        string = test2.toString();
+        StdOut.println(string);
+
+        // print the size to standard output
+        int size = test1.size();
+        StdOut.println("Number of points = " + size);
+
+        size = test2.size();
+        StdOut.println("Number of points = " + size);
+
+        // print the tour length to standard output
+        double length = test1.length();
+        StdOut.println("Tour length = " + length);
+
+        length = test2.length();
+        StdOut.println("Tour length = " + length);
+
+        test1.draw();
+        test2.draw();
+    }
+}
